@@ -15,21 +15,24 @@ export default async function (req, res) {
     return;
   }
 
-  const animal = req.body.animal || '';
-  if (animal.trim().length === 0) {
+  const query = req.body.query || '';
+  if (query.trim().length === 0) {
     res.status(400).json({
       error: {
-        message: "Please enter a valid animal",
+        message: "Please enter a valid query",
       }
     });
     return;
   }
 
+  let history = req.body.history;
+
+
   try {
     const completion = await openai.createCompletion({
       model: "text-davinci-003",
-      prompt: generatePrompt(animal),
-      temperature: 0.6,
+      prompt: generatePrompt(query, history),
+      temperature: 0.9,
     });
     res.status(200).json({ result: completion.data.choices[0].text });
   } catch(error) {
@@ -48,15 +51,18 @@ export default async function (req, res) {
   }
 }
 
-function generatePrompt(animal) {
-  const capitalizedAnimal =
-    animal[0].toUpperCase() + animal.slice(1).toLowerCase();
-  return `Suggest three names for an animal that is a superhero.
+function generatePrompt(query, history) {
+  const capitalizedQuery =
+    query[0].toUpperCase() + query.slice(1).toLowerCase();
+  return `Generate a comma separated list of 5 diverse search results related to a query. They should explore different concepts and give a broad overview of the field.
 
-Animal: Cat
-Names: Captain Sharpclaw, Agent Fluffball, The Incredible Feline
-Animal: Dog
-Names: Ruff the Protector, Wonder Canine, Sir Barks-a-Lot
-Animal: ${capitalizedAnimal}
-Names:`;
+  Query: Basketball
+  Results: College Basketball, NBA, Basketball Drills, Kobe Bryant, 3 Point Line
+
+  Query: Japan
+  Results: Shinto, Hokusai, Edo, Shinkansen, Kanji, Ikebana
+
+
+  Query: ${history + "&" + capitalizedQuery}
+  Results:`
 }
